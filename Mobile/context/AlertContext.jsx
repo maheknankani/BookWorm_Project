@@ -1,0 +1,50 @@
+import { createContext, useContext, useState } from "react";
+import CustomAlert from "../components/CustomAlert";
+
+const AlertContext = createContext();
+
+export function AlertProvider({ children }) {
+  const [alertConfig, setAlertConfig] = useState({
+    visible: false,
+    title: "",
+    message: "",
+    type: "info",
+    buttons: [],
+  });
+
+  const showAlert = ({ title, message, type = "info", buttons = [] }) => {
+    setAlertConfig({
+      visible: true,
+      title,
+      message,
+      type,
+      buttons,
+    });
+  };
+
+  const hideAlert = () => {
+    setAlertConfig((prev) => ({ ...prev, visible: false }));
+  };
+
+  return (
+    <AlertContext.Provider value={{ showAlert, hideAlert }}>
+      {children}
+      <CustomAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        buttons={alertConfig.buttons}
+        onClose={hideAlert}
+      />
+    </AlertContext.Provider>
+  );
+}
+
+export function useAlert() {
+  const context = useContext(AlertContext);
+  if (!context) {
+    throw new Error("useAlert must be used within an AlertProvider");
+  }
+  return context;
+}
