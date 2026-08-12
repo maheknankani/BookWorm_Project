@@ -21,6 +21,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { API_URL } from "../../constants/api";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAlert } from "../../context/AlertContext";
 
@@ -205,10 +206,11 @@ export default function Create() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
+    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }} edges={["top", "left", "right"]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
       <ScrollView contentContainerStyle={styles.container} style={styles.scrollViewStyle}>
         <View style={styles.card}>
           {/* TOP NAV BAR (BACK & CANCEL) */}
@@ -371,5 +373,6 @@ export default function Create() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+  </SafeAreaView>
   );
 }

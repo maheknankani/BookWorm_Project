@@ -17,10 +17,10 @@ import { API_URL } from "../../constants/api";
 import { useAuthStore } from "../../store/authStore";
 import styles from "../../assets/styles/profile.styles";
 import ProfileHeader from "../../components/ProfileHeader";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import COLORS from "../../constants/colors";
 import { Image } from "expo-image";
-import { sleep } from "../../lib/utils";
 import Loader from "../../components/Loader";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
@@ -255,7 +255,17 @@ export default function Profile() {
   if (isLoading && !refreshing) return <Loader />;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      {/* TOP NAV BAR (BACK & RETURN HOME) */}
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8, paddingTop: 4 }}>
+        <TouchableOpacity style={{ padding: 8, borderRadius: 20, backgroundColor: COLORS.cardBackground, borderWidth: 1, borderColor: COLORS.border }} onPress={() => router.push("/")} activeOpacity={0.7}>
+          <Ionicons name="arrow-back" size={20} color={COLORS.textDark} />
+        </TouchableOpacity>
+        <Text style={{ fontSize: 18, fontWeight: "700", color: COLORS.textPrimary }}>My Profile</Text>
+        <TouchableOpacity style={{ padding: 8, borderRadius: 20, backgroundColor: COLORS.cardBackground, borderWidth: 1, borderColor: COLORS.border }} onPress={() => router.push("/")} activeOpacity={0.7}>
+          <Ionicons name="close" size={20} color={COLORS.textDark} />
+        </TouchableOpacity>
+      </View>
       <FlatList
         data={books}
         renderItem={renderBookItem}
@@ -334,6 +344,18 @@ export default function Profile() {
                 <Text style={{ fontSize: 12, color: COLORS.textSecondary, marginTop: 6 }}>
                   Tap to change picture
                 </Text>
+                {newAvatarUri ? (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setNewAvatarUri(null);
+                      setNewAvatarBase64(null);
+                    }}
+                    style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 6, backgroundColor: "#fee2e2", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}
+                  >
+                    <Ionicons name="trash-outline" size={12} color="#dc2626" />
+                    <Text style={{ fontSize: 11, fontWeight: "600", color: "#dc2626" }}>Remove Selected Photo</Text>
+                  </TouchableOpacity>
+                ) : null}
               </View>
 
               {/* USERNAME INPUT */}
@@ -411,6 +433,6 @@ export default function Profile() {
           </ScrollView>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }

@@ -22,6 +22,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { formatPublishDate, sleep } from "../../lib/utils";
 import COLORS from "../../constants/colors";
 import Loader from "../../components/Loader";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const LIBRARY_CATEGORIES = [
   { key: "want_to_read", label: "Want to Read" },
@@ -371,7 +372,7 @@ export default function Home() {
   if (initialLoading && books.length === 0) return <Loader />;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <FlatList
         data={books}
         renderItem={renderItem}
@@ -636,6 +637,6 @@ export default function Home() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }

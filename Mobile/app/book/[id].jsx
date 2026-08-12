@@ -19,6 +19,7 @@ import { API_URL } from "../../constants/api";
 import COLORS from "../../constants/colors";
 import { formatPublishDate } from "../../lib/utils";
 import Loader from "../../components/Loader";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAlert } from "../../context/AlertContext";
 
@@ -255,7 +256,7 @@ export default function BookDetails() {
   if (loading || !book) return <Loader />;
 
   return (
-    <View style={localStyles.container}>
+    <SafeAreaView style={localStyles.container} edges={["top", "left", "right"]}>
       {/* HEADER NAV BAR */}
       <View style={localStyles.topBar}>
         <TouchableOpacity style={localStyles.backButton} onPress={() => router.back()}>
@@ -482,7 +483,7 @@ export default function BookDetails() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -496,7 +497,7 @@ const localStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingTop: 45,
+    paddingTop: 8,
     paddingBottom: 12,
     backgroundColor: COLORS.cardBackground,
     borderBottomWidth: 1,

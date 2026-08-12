@@ -15,6 +15,7 @@ import { useAuthStore } from "../store/authStore";
 import { API_URL } from "../constants/api";
 import COLORS from "../constants/colors";
 import Loader from "../components/Loader";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Notifications() {
   const { token } = useAuthStore();
@@ -151,7 +152,7 @@ export default function Notifications() {
   if (loading && !refreshing) return <Loader />;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       {/* TOP HEADER */}
       <View style={styles.topBar}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -193,7 +194,7 @@ export default function Notifications() {
           </View>
         }
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
