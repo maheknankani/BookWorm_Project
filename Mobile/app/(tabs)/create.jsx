@@ -19,7 +19,7 @@ import { useAuthStore } from "../../store/authStore";
 
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import { API_URL } from "../../constants/api";
 
 import { useAlert } from "../../context/AlertContext";
@@ -58,8 +58,16 @@ export default function Create() {
 
       if (!result.canceled) {
         const asset = result.assets[0];
-        const info = await FileSystem.getInfoAsync(asset.uri);
-        if (info.size && info.size > 5 * 1024 * 1024) {
+        let fileSize = asset.fileSize || asset.size;
+        if (!fileSize) {
+          try {
+            const info = await FileSystem.getInfoAsync(asset.uri);
+            fileSize = info.size;
+          } catch {
+            fileSize = 0;
+          }
+        }
+        if (fileSize && fileSize > 5 * 1024 * 1024) {
           showAlert({ title: "File Too Large", message: "Cover image file size exceeds the 5MB limit. Please choose a smaller image.", type: "error" });
           return;
         }

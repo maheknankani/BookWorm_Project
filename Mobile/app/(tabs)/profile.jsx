@@ -23,7 +23,7 @@ import { Image } from "expo-image";
 import { sleep } from "../../lib/utils";
 import Loader from "../../components/Loader";
 import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 
 import { useAlert } from "../../context/AlertContext";
 
