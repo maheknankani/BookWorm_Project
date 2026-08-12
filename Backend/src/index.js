@@ -32,6 +32,10 @@ app.get("/", (req, res) => {
   res.json({ message: "BookWorm API is running" });
 });
 
+app.get("/api", (req, res) => {
+  res.json({ message: "BookWorm API Endpoint is active", health: "/api/health" });
+});
+
 app.get("/api/health", async (req, res) => {
   const isConnected = await connectDB();
   res.json({
@@ -42,7 +46,7 @@ app.get("/api/health", async (req, res) => {
 
 // Middleware to ensure DB connection is ready on serverless requests
 app.use(async (req, res, next) => {
-  if (req.path === "/" || req.path === "/api/health") {
+  if (req.path === "/" || req.path === "/api" || req.path === "/api/health") {
     return next();
   }
   const isConnected = await connectDB();
