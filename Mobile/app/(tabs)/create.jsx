@@ -38,6 +38,23 @@ export default function Create() {
   const router = useRouter();
   const { token } = useAuthStore();
 
+  const handleCancel = () => {
+    setTitle("");
+    setCaption("");
+    setRating(3);
+    setImage(null);
+    setImageBase64(null);
+    setPdfName(null);
+    setPdfDataUrl(null);
+    router.push("/");
+  };
+
+  const removeImage = (e) => {
+    e?.stopPropagation();
+    setImage(null);
+    setImageBase64(null);
+  };
+
   const pickImage = async () => {
     try {
       if (Platform.OS !== "web") {
@@ -194,6 +211,16 @@ export default function Create() {
     >
       <ScrollView contentContainerStyle={styles.container} style={styles.scrollViewStyle}>
         <View style={styles.card}>
+          {/* TOP NAV BAR (BACK & CANCEL) */}
+          <View style={styles.topBar}>
+            <TouchableOpacity style={styles.headerBackButton} onPress={handleCancel} activeOpacity={0.7}>
+              <Ionicons name="arrow-back" size={20} color={COLORS.textDark} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.headerBackButton} onPress={handleCancel} activeOpacity={0.7}>
+              <Ionicons name="close" size={20} color={COLORS.textDark} />
+            </TouchableOpacity>
+          </View>
+
           {/* HEADER */}
           <View style={styles.header}>
             <Text style={styles.title}>Add Book Recommendation</Text>
@@ -235,10 +262,14 @@ export default function Create() {
                   <View style={{ width: "100%", height: "100%", position: "relative" }}>
                     <Image source={{ uri: image }} style={styles.previewImage} resizeMode="cover" />
                     <View style={styles.imageOverlay}>
-                      <View style={styles.cropBadge}>
+                      <TouchableOpacity style={styles.cropBadge} onPress={pickImage} activeOpacity={0.8}>
                         <Ionicons name="crop-outline" size={14} color="#ffffff" />
-                        <Text style={styles.cropBadgeText}>Tap to Recrop</Text>
-                      </View>
+                        <Text style={styles.cropBadgeText}>Recrop</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.removeBadge} onPress={removeImage} activeOpacity={0.8}>
+                        <Ionicons name="trash-outline" size={14} color="#ffffff" />
+                        <Text style={styles.cropBadgeText}>Remove</Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
                 ) : (
@@ -330,6 +361,11 @@ export default function Create() {
                   <Text style={styles.buttonText}>Share Recommendation</Text>
                 </>
               )}
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.cancelButton} onPress={handleCancel} disabled={loading} activeOpacity={0.7}>
+              <Ionicons name="close-circle-outline" size={18} color={COLORS.textSecondary} style={{ marginRight: 6 }} />
+              <Text style={styles.cancelButtonText}>Cancel & Return Home</Text>
             </TouchableOpacity>
           </View>
         </View>
