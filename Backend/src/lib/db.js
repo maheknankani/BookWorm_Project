@@ -12,11 +12,13 @@ export const connectDB = async () => {
   }
 
   try {
-    const conn = await mongoose.connect(mongoUri);
+    const conn = await mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 5000,
+    });
     console.log(`Database connected ${conn.connection.host}`);
     return true;
   } catch (error) {
-    console.error("Error connecting to database:", error);
+    console.error("Error connecting to database:", error.message);
     return false;
   }
 };

@@ -40,6 +40,20 @@ app.get("/api/health", async (req, res) => {
   });
 });
 
+// Middleware to ensure DB connection is ready on serverless requests
+app.use(async (req, res, next) => {
+  if (req.path === "/" || req.path === "/api/health") {
+    return next();
+  }
+  const isConnected = await connectDB();
+  if (!isConnected) {
+    return res.status(500).json({
+      message: "Database connection failed. Please verify MONGO_URI and MongoDB Atlas IP Network Access (allow 0.0.0.0/0).",
+    });
+  }
+  next();
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
 app.use("/api/library", libraryRoutes);
