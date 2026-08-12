@@ -209,16 +209,6 @@ export default function Library() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      {/* TOP NAV BAR (BACK & RETURN HOME) */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8, paddingTop: 4 }}>
-        <TouchableOpacity style={{ padding: 8, borderRadius: 20, backgroundColor: COLORS.cardBackground, borderWidth: 1, borderColor: COLORS.border }} onPress={() => router.push("/")} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={20} color={COLORS.textDark} />
-        </TouchableOpacity>
-        <TouchableOpacity style={{ padding: 8, borderRadius: 20, backgroundColor: COLORS.cardBackground, borderWidth: 1, borderColor: COLORS.border }} onPress={() => router.push("/")} activeOpacity={0.7}>
-          <Ionicons name="close" size={20} color={COLORS.textDark} />
-        </TouchableOpacity>
-      </View>
-
       {/* HEADER */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My Library 📖</Text>
