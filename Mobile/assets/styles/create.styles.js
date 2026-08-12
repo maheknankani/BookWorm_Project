@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   },
   imagePicker: {
     width: "100%",
-    height: 200,
+    height: 220,
     backgroundColor: COLORS.inputBackground,
     borderRadius: 12,
     borderWidth: 1,
@@ -103,6 +103,26 @@ const styles = StyleSheet.create({
   previewImage: {
     width: "100%",
     height: "100%",
+  },
+  imageOverlay: {
+    position: "absolute",
+    bottom: 10,
+    right: 10,
+    flexDirection: "row",
+  },
+  cropBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.75)",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  cropBadgeText: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "600",
+    marginLeft: 6,
   },
   placeholderContainer: {
     width: "100%",

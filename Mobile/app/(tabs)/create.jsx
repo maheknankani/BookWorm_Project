@@ -50,8 +50,8 @@ export default function Create() {
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images || "images",
-        allowsEditing: false,
-        quality: 0.7,
+        allowsEditing: true,
+        quality: 0.8,
         base64: true,
       });
 
@@ -230,13 +230,21 @@ export default function Create() {
             {/* IMAGE */}
             <View style={styles.formGroup}>
               <Text style={styles.label}>Book Cover Image</Text>
-              <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+              <TouchableOpacity style={styles.imagePicker} onPress={pickImage} activeOpacity={0.85}>
                 {image ? (
-                  <Image source={{ uri: image }} style={styles.previewImage} />
+                  <View style={{ width: "100%", height: "100%", position: "relative" }}>
+                    <Image source={{ uri: image }} style={styles.previewImage} resizeMode="cover" />
+                    <View style={styles.imageOverlay}>
+                      <View style={styles.cropBadge}>
+                        <Ionicons name="crop-outline" size={14} color="#ffffff" />
+                        <Text style={styles.cropBadgeText}>Tap to Recrop</Text>
+                      </View>
+                    </View>
+                  </View>
                 ) : (
                   <View style={styles.placeholderContainer}>
                     <Ionicons name="image-outline" size={40} color={COLORS.textSecondary} />
-                    <Text style={styles.placeholderText}>Tap to select cover image</Text>
+                    <Text style={styles.placeholderText}>Tap to select & crop cover image</Text>
                   </View>
                 )}
               </TouchableOpacity>

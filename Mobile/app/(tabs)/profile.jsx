@@ -139,8 +139,9 @@ export default function Profile() {
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images || "images",
-        allowsEditing: false,
-        quality: 0.7,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
         base64: true,
       });
 
