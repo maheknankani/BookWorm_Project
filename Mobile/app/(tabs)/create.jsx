@@ -49,10 +49,9 @@ export default function Create() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: "images",
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.5,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images || "images",
+        allowsEditing: false,
+        quality: 0.7,
         base64: true,
       });
 
