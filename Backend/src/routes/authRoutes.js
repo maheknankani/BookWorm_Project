@@ -7,7 +7,8 @@ import cloudinary from "../lib/cloudinary.js";
 const router = express.Router();
 
 const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "15d" });
+  const secret = process.env.JWT_SECRET || "default_bookworm_jwt_secret_key_2026";
+  return jwt.sign({ userId }, secret, { expiresIn: "15d" });
 };
 
 const formatUserResponse = (user) => ({

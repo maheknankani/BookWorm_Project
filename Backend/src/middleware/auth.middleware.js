@@ -15,7 +15,8 @@ const protectRoute = async (req, res, next) => {
 
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const secret = process.env.JWT_SECRET || "default_bookworm_jwt_secret_key_2026";
+      decoded = jwt.verify(token, secret);
     } catch (err) {
       if (err.name === "TokenExpiredError") {
         return res.status(401).json({ message: "Authentication token expired, please log in again" });

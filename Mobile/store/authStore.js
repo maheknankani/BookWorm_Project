@@ -1,4 +1,3 @@
-
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "../constants/api";
@@ -11,6 +10,7 @@ export const useAuthStore = create((set) => ({
 
   register: async (username, email, password) => {
     set({ isLoading: true });
+
     try {
       const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
@@ -24,19 +24,38 @@ export const useAuthStore = create((set) => ({
         }),
       });
 
-      const data = await response.json();
+      const text = await response.text();
 
-      if (!response.ok) throw new Error(data.message || "Something went wrong");
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        console.log("Register server response:", text);
+        throw new Error(`Server returned: ${text}`);
+      }
+
+      if (!response.ok) {
+        throw new Error(data.message || "Registration failed");
+      }
 
       await AsyncStorage.setItem("user", JSON.stringify(data.user));
       await AsyncStorage.setItem("token", data.token);
 
-      set({ token: data.token, user: data.user, isLoading: false });
+      set({
+        token: data.token,
+        user: data.user,
+        isLoading: false,
+      });
 
       return { success: true };
     } catch (error) {
+      console.log("Register error:", error);
       set({ isLoading: false });
-      return { success: false, error: error.message };
+
+      return {
+        success: false,
+        error: error.message,
+      };
     }
   },
 
@@ -55,19 +74,42 @@ export const useAuthStore = create((set) => ({
         }),
       });
 
-      const data = await response.json();
+      const text = await response.text();
 
-      if (!response.ok) throw new Error(data.message || "Something went wrong");
+      console.log("Login status:", response.status);
+      console.log("Login response:", text);
+
+      let data;
+
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`Server returned: ${text}`);
+      }
+
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed");
+      }
 
       await AsyncStorage.setItem("user", JSON.stringify(data.user));
       await AsyncStorage.setItem("token", data.token);
 
-      set({ token: data.token, user: data.user, isLoading: false });
+      set({
+        token: data.token,
+        user: data.user,
+        isLoading: false,
+      });
 
       return { success: true };
     } catch (error) {
+      console.log("Login error:", error);
+
       set({ isLoading: false });
-      return { success: false, error: error.message };
+
+      return {
+        success: false,
+        error: error.message,
+      };
     }
   },
 
@@ -103,7 +145,11 @@ export const useAuthStore = create((set) => ({
     } catch (error) {
       console.log("Logout failed", error);
     } finally {
-      set({ token: null, user: null, isLoading: false });
+      set({
+        token: null,
+        user: null,
+        isLoading: false,
+      });
     }
   },
 }));

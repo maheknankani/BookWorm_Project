@@ -1,13 +1,22 @@
 import mongoose from "mongoose";
 
 export const connectDB = async () => {
-  const mongoUri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/bookstore";
+  if (mongoose.connection.readyState >= 1) {
+    return true;
+  }
+
+  const mongoUri = process.env.MONGO_URI;
+  if (!mongoUri) {
+    console.error("MONGO_URI environment variable is missing!");
+    return false;
+  }
 
   try {
     const conn = await mongoose.connect(mongoUri);
     console.log(`Database connected ${conn.connection.host}`);
+    return true;
   } catch (error) {
-    console.log("Error connecting to database", error);
-    process.exit(1); // exit with failure
+    console.error("Error connecting to database:", error);
+    return false;
   }
 };
