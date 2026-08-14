@@ -152,4 +152,73 @@ export const useAuthStore = create((set) => ({
       });
     }
   },
+
+  sendForgotPasswordOtp: async (email) => {
+    try {
+      const response = await fetch(`${API_URL}/auth/forgot-password/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`Server returned HTML error (${response.status}). If using Vercel production API, please deploy the updated backend code.`);
+      }
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to send OTP");
+      }
+      return { success: true, message: data.message };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  verifyForgotPasswordOtp: async (email, otp) => {
+    try {
+      const response = await fetch(`${API_URL}/auth/forgot-password/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp }),
+      });
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`Server returned HTML error (${response.status}). Please verify API deployment or local server.`);
+      }
+      if (!response.ok) {
+        throw new Error(data.message || "Invalid or expired OTP");
+      }
+      return { success: true, message: data.message };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  resetPassword: async (email, otp, newPassword) => {
+    try {
+      const response = await fetch(`${API_URL}/auth/forgot-password/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp, newPassword }),
+      });
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`Server returned HTML error (${response.status}). Please verify API deployment or local server.`);
+      }
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to reset password");
+      }
+      return { success: true, message: data.message };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  },
 }));
