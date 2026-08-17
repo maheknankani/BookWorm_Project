@@ -7,6 +7,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import CreateBook from './pages/CreateBook'
 import Profile from './pages/Profile'
+import About from './pages/About'
 
 function AppRoutes() {
   const { user, loading } = useAuth()
@@ -25,6 +26,7 @@ function AppRoutes() {
       <main className="min-h-screen pt-16">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
           <Route 
             path="/login" 
             element={user ? <Navigate to="/" replace /> : <Login />} 

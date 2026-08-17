@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import cloudinary from "../lib/cloudinary.js";
 import Book from "../models/Book.js";
 import Notification from "../models/Notification.js";
@@ -322,6 +323,110 @@ router.delete("/:id/comment/:commentId", protectRoute, async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
+// Edit a book recommendation (Strict Ownership check)
+const handleUpdateBookRecommendation = async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid book ID format" });
+    }
+
+    const book = await Book.findById(req.params.id);
+    if (!book) return res.status(404).json({ message: "Book recommendation not found" });
+
+    if (book.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Unauthorized: You can only edit your own recommendations" });
+    }
+
+    const { title, caption, rating, image, pdf } = req.body;
+
+    if (title !== undefined) {
+      if (typeof title !== "string" || title.trim().length === 0) {
+        return res.status(400).json({ message: "Book title cannot be empty" });
+      }
+      if (title.trim().length > 150) {
+        return res.status(400).json({ message: "Book title cannot exceed 150 characters" });
+      }
+      book.title = title.trim();
+    }
+
+    if (caption !== undefined) {
+      if (typeof caption !== "string" || caption.trim().length === 0) {
+        return res.status(400).json({ message: "Caption cannot be empty" });
+      }
+      if (caption.trim().length > 2000) {
+        return res.status(400).json({ message: "Caption cannot exceed 2000 characters" });
+      }
+      book.caption = caption.trim();
+    }
+
+    if (rating !== undefined) {
+      const numRating = Number(rating);
+      if (isNaN(numRating) || numRating < 1 || numRating > 5) {
+        return res.status(400).json({ message: "Rating must be a number between 1 and 5" });
+      }
+      book.rating = Math.round(numRating);
+    }
+
+    if (image && image !== book.image) {
+      const imageCheck = validateImagePayload(image);
+      if (!imageCheck.valid) {
+        return res.status(400).json({ message: imageCheck.message });
+      }
+      if (image.startsWith("data:")) {
+        try {
+          const uploadResponse = await cloudinary.uploader.upload(image);
+          book.image = uploadResponse.secure_url;
+        } catch (imgErr) {
+          console.error("Cloudinary image upload error:", imgErr.message);
+          return res.status(400).json({ message: imgErr.message || "Failed to upload cover image. Please select a smaller image." });
+        }
+      } else {
+        book.image = image;
+      }
+    }
+
+    if (pdf !== undefined && pdf !== book.pdfUrl) {
+      if (pdf && pdf.trim() !== "") {
+        const pdfCheck = validatePdfPayload(pdf);
+        if (!pdfCheck.valid) {
+          return res.status(400).json({ message: pdfCheck.message });
+        }
+        if (pdf.startsWith("data:")) {
+          try {
+            const pdfUpload = await cloudinary.uploader.upload(pdf, {
+              resource_type: "raw",
+              folder: "book_pdfs",
+            });
+            book.pdfUrl = pdfUpload.secure_url;
+          } catch (pdfErr) {
+            console.error("PDF upload Cloudinary error:", pdfErr.message);
+            book.pdfUrl = pdf;
+          }
+        } else {
+          book.pdfUrl = pdf;
+        }
+      } else {
+        book.pdfUrl = "";
+      }
+    }
+
+    await book.save();
+    
+    const updatedBook = await Book.findById(book._id)
+      .populate("user", "username profileImage")
+      .populate("comments.user", "username profileImage");
+
+    res.json(updatedBook);
+  } catch (error) {
+    console.error("Error editing book:", error);
+    res.status(500).json({ message: error.message || "Failed to update recommendation" });
+  }
+};
+
+router.put("/:id", protectRoute, handleUpdateBookRecommendation);
+router.post("/:id/edit", protectRoute, handleUpdateBookRecommendation);
+router.put("/:id/edit", protectRoute, handleUpdateBookRecommendation);
 
 // Delete a book (Strict Ownership check)
 router.delete("/:id", protectRoute, async (req, res) => {

@@ -123,11 +123,15 @@ const styles = StyleSheet.create({
   },
   bookImageContainer: {
     width: "100%",
-    height: 200,
-    borderRadius: 12,
+    height: 250,
+    borderRadius: 14,
     overflow: "hidden",
     marginBottom: 12,
-    backgroundColor: COLORS.border,
+    backgroundColor: "#f4f7f4",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   bookImage: {
     width: "100%",

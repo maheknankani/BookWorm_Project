@@ -1,4 +1,9 @@
-# BookWorm – Mobile Book Reading & Community App
+<div align="center">
+  <img src="Mobile/assets/images/icon.png" alt="BookWorm Logo" width="120" />
+  <h1>BookWorm</h1>
+  <p><strong>Read • Discover • Share • Connect</strong></p>
+</div>
+
 BookWorm is a full-stack mobile application designed to provide readers with a complete digital reading and book-sharing experience. The application allows users to discover, share, read, save, rate, and review books while managing their personal reading library.
 
 ## About the Project

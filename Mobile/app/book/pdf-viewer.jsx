@@ -4,11 +4,13 @@ import { WebView } from "react-native-webview";
 import { Ionicons } from "@expo/vector-icons";
 import COLORS from "../../constants/colors";
 import { useState } from "react";
+import CreateStoryModal from "../../components/CreateStoryModal";
 
 export default function PdfViewer() {
   const { url, title } = useLocalSearchParams();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [storyModalVisible, setStoryModalVisible] = useState(false);
 
   // Use Google Docs PDF viewer URL for universal Android/iOS PDF rendering
   const viewerUrl = url
@@ -24,7 +26,13 @@ export default function PdfViewer() {
         <Text style={styles.topBarTitle} numberOfLines={1}>
           {title || "PDF Reader"}
         </Text>
-        <View style={{ width: 36 }} />
+        <TouchableOpacity
+          style={styles.storyBtn}
+          onPress={() => setStoryModalVisible(true)}
+        >
+          <Ionicons name="sparkles" size={18} color="#ffffff" />
+          <Text style={styles.storyBtnText}>Quote Story</Text>
+        </TouchableOpacity>
       </View>
 
       {url ? (
@@ -47,6 +55,12 @@ export default function PdfViewer() {
           <Text style={styles.errorText}>No PDF URL available for this book.</Text>
         </View>
       )}
+
+      <CreateStoryModal
+        visible={storyModalVisible}
+        onClose={() => setStoryModalVisible(false)}
+        initialBookTitle={title || "PDF Reader"}
+      />
     </View>
   );
 }
@@ -76,6 +90,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: COLORS.textPrimary,
+    marginHorizontal: 8,
+  },
+  storyBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1b4323",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    gap: 4,
+  },
+  storyBtnText: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "700",
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,

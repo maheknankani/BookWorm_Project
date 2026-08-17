@@ -10,7 +10,7 @@ import {
   Platform,
   Modal,
 } from "react-native";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import styles from "../../assets/styles/login.styles";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,6 +19,7 @@ import { useAuthStore } from "../../store/authStore";
 import { useAlert } from "../../context/AlertContext";
 
 export default function Login() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -41,7 +42,9 @@ export default function Login() {
     }
     const result = await login(email.trim(), password);
 
-    if (!result.success) {
+    if (result.success) {
+      router.replace("/(tabs)");
+    } else {
       showAlert({ title: "Login Failed", message: result.error || "Invalid credentials", type: "error" });
     }
   };

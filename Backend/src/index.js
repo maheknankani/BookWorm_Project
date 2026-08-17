@@ -13,6 +13,7 @@ import authRoutes from "./routes/authRoutes.js";
 import bookRoutes from "./routes/bookRoutes.js";
 import libraryRoutes from "./routes/libraryRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import storyRoutes from "./routes/storyRoutes.js";
 
 import { connectDB } from "./lib/db.js";
 
@@ -62,6 +63,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
 app.use("/api/library", libraryRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/stories", storyRoutes);
 
 connectDB();
 

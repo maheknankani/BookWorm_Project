@@ -12,14 +12,23 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-      // You could verify the token here if needed
-      const userData = JSON.parse(localStorage.getItem('user'))
-      setUser(userData)
+    try {
+      const token = localStorage.getItem('token')
+      if (token) {
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+        const userStr = localStorage.getItem('user')
+        if (userStr) {
+          const userData = JSON.parse(userStr)
+          setUser(userData)
+        }
+      }
+    } catch (err) {
+      console.error("Error reading stored auth credentials:", err)
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [])
 
   const login = async (email, password) => {

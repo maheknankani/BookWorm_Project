@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { api } from '../services/api'
-import { Star, User, Plus, BookOpen } from 'lucide-react'
+import { Star, User, Plus, BookOpen, X, ZoomIn, ZoomOut, RotateCcw, Edit3 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
@@ -11,6 +11,18 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
+
+  const [previewImage, setPreviewImage] = useState(null)
+  const [previewTitle, setPreviewTitle] = useState('')
+  const [zoomScale, setZoomScale] = useState(1)
+
+  // Edit Recommendation Modal State
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [editingBook, setEditingBook] = useState(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editCaption, setEditCaption] = useState('')
+  const [editRating, setEditRating] = useState(3)
+  const [editLoading, setEditLoading] = useState(false)
 
   useEffect(() => {
     fetchBooks()
@@ -45,15 +57,62 @@ export default function Home() {
   }
 
   const handleDeleteBook = async (bookId) => {
-    if (!window.confirm('Are you sure you want to delete this book?')) return
+    if (!window.confirm('Are you sure you want to delete this recommendation?')) return
     
     try {
       await api.delete(`/books/${bookId}`)
       setBooks(books.filter(book => book._id !== bookId))
-      toast.success('Book deleted successfully')
+      toast.success('Recommendation deleted successfully')
     } catch (error) {
       console.error('Error deleting book:', error)
-      toast.error('Failed to delete book')
+      toast.error('Failed to delete recommendation')
+    }
+  }
+
+  const openEditModal = (book) => {
+    setEditingBook(book)
+    setEditTitle(book.title || '')
+    setEditCaption(book.caption || '')
+    setEditRating(book.rating || 3)
+    setEditModalOpen(true)
+  }
+
+  const handleUpdateBook = async (e) => {
+    e.preventDefault()
+    if (!editTitle.trim() || !editCaption.trim()) {
+      toast.error('Title and caption are required')
+      return
+    }
+
+    try {
+      setEditLoading(true)
+      let response
+      try {
+        response = await api.put(`/books/${editingBook._id}`, {
+          title: editTitle.trim(),
+          caption: editCaption.trim(),
+          rating: editRating,
+        })
+      } catch (err) {
+        if (err.response?.status === 404 || err.response?.status === 405) {
+          response = await api.post(`/books/${editingBook._id}/edit`, {
+            title: editTitle.trim(),
+            caption: editCaption.trim(),
+            rating: editRating,
+          })
+        } else {
+          throw err
+        }
+      }
+
+      setBooks(books.map(b => b._id === editingBook._id ? { ...b, ...response.data } : b))
+      toast.success('Recommendation updated successfully!')
+      setEditModalOpen(false)
+    } catch (error) {
+      console.error('Error updating book:', error)
+      toast.error(error.response?.data?.message || 'Failed to update recommendation')
+    } finally {
+      setEditLoading(false)
     }
   }
 
@@ -112,7 +171,12 @@ export default function Home() {
                   <img
                     src={book.image}
                     alt={book.title}
-                    className="w-full h-48 object-cover rounded-lg mb-4"
+                    onClick={() => {
+                      setPreviewImage(book.image)
+                      setPreviewTitle(book.title)
+                    }}
+                    className="w-full h-56 object-contain bg-gray-50 rounded-lg mb-4 cursor-pointer hover:opacity-90 transition-opacity"
+                    title="Click for full-screen preview"
                   />
                   <div className="absolute top-2 right-2 bg-white rounded-full px-2 py-1 flex items-center space-x-1">
                     <Star className="h-4 w-4 text-yellow-500 fill-current" />
@@ -134,12 +198,20 @@ export default function Home() {
                   </div>
                   
                   {user && book.user?._id === user.id && (
-                    <div className="pt-3 border-t border-gray-100">
+                    <div className="pt-3 border-t border-gray-100 flex items-center space-x-2">
+                      <button
+                        onClick={() => openEditModal(book)}
+                        className="flex-1 flex items-center justify-center space-x-1 text-primary-700 bg-primary-50 hover:bg-primary-100 text-xs font-semibold transition-colors py-1.5 rounded"
+                      >
+                        <Edit3 className="h-3.5 w-3.5" />
+                        <span>Edit</span>
+                      </button>
                       <button
                         onClick={() => handleDeleteBook(book._id)}
-                        className="w-full text-red-600 hover:text-red-700 text-sm font-medium transition-colors"
+                        className="flex-1 flex items-center justify-center space-x-1 text-red-600 bg-red-50 hover:bg-red-100 text-xs font-semibold transition-colors py-1.5 rounded"
                       >
-                        Delete Book
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span>Delete</span>
                       </button>
                     </div>
                   )}
@@ -161,6 +233,168 @@ export default function Home() {
             </div>
           )}
         </>
+      )}
+
+      {/* EDIT RECOMMENDATION MODAL */}
+      {editModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative animate-in fade-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Edit Recommendation</h3>
+              <button 
+                onClick={() => setEditModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateBook} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Book Title
+                </label>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="input-field"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Rating
+                </label>
+                <div className="flex items-center space-x-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      type="button"
+                      key={star}
+                      onClick={() => setEditRating(star)}
+                      className="p-1 focus:outline-none"
+                    >
+                      <Star
+                        className={`h-7 w-7 ${
+                          star <= editRating
+                            ? 'text-yellow-500 fill-current'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Review Caption
+                </label>
+                <textarea
+                  value={editCaption}
+                  onChange={(e) => setEditCaption(e.target.value)}
+                  rows={4}
+                  className="input-field resize-none"
+                  required
+                />
+              </div>
+
+              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setEditModalOpen(false)}
+                  className="btn-secondary"
+                  disabled={editLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={editLoading}
+                >
+                  {editLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* FULL SCREEN BOOK COVER PREVIEW MODAL */}
+      {previewImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col items-center justify-between p-6 transition-all duration-300 animate-in fade-in"
+          onClick={() => {
+            setPreviewImage(null)
+            setZoomScale(1)
+          }}
+        >
+          <div className="w-full flex items-center justify-between z-10" onClick={(e) => e.stopPropagation()}>
+            <button 
+              onClick={() => {
+                setPreviewImage(null)
+                setZoomScale(1)
+              }}
+              className="text-white hover:text-gray-300 bg-white/10 hover:bg-white/20 rounded-full p-2.5 transition-all duration-200"
+              title="Close preview"
+            >
+              <X className="h-6 w-6" />
+            </button>
+
+            <div className="text-center">
+              <p className="text-white/90 text-base font-semibold tracking-wide">
+                {previewTitle}
+              </p>
+              <p className="text-white/50 text-xs">Full Cover Preview</p>
+            </div>
+
+            <button 
+              onClick={() => setZoomScale(1)}
+              className="flex items-center space-x-1 text-xs text-white/80 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition-all duration-200"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Reset</span>
+            </button>
+          </div>
+
+          <div 
+            className="relative w-full flex-1 flex items-center justify-center overflow-hidden my-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={previewImage}
+              alt={previewTitle}
+              style={{ transform: `scale(${zoomScale})` }}
+              className="max-w-full max-h-[75vh] rounded-xl shadow-2xl object-contain border border-white/10 transition-transform duration-200 ease-out"
+            />
+          </div>
+
+          {/* ZOOM CONTROLS BAR */}
+          <div 
+            className="flex items-center space-x-4 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full z-10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setZoomScale(prev => Math.max(prev - 0.25, 0.75))}
+              className="text-white hover:text-gray-300 p-1.5 rounded-full hover:bg-white/10 transition-colors"
+              title="Zoom out"
+            >
+              <ZoomOut className="h-5 w-5" />
+            </button>
+            <span className="text-xs font-bold text-white min-w-12 text-center">
+              {Math.round(zoomScale * 100)}%
+            </span>
+            <button
+              onClick={() => setZoomScale(prev => Math.min(prev + 0.25, 2.5))}
+              className="text-white hover:text-gray-300 p-1.5 rounded-full hover:bg-white/10 transition-colors"
+              title="Zoom in"
+            >
+              <ZoomIn className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )

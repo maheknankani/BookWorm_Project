@@ -34,7 +34,9 @@ export default function Signup() {
 
     const result = await register(username.trim(), email.trim(), password);
 
-    if (!result.success) {
+    if (result.success) {
+      router.replace("/(tabs)");
+    } else {
       showAlert({ title: "Registration Error", message: result.error || "Failed to create account", type: "error" });
     }
   };

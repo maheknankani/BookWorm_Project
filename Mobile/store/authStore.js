@@ -140,8 +140,7 @@ export const useAuthStore = create((set) => ({
     set({ isLoading: true });
 
     try {
-      await AsyncStorage.removeItem("token");
-      await AsyncStorage.removeItem("user");
+      await AsyncStorage.multiRemove(["token", "user"]);
     } catch (error) {
       console.log("Logout failed", error);
     } finally {

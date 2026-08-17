@@ -1,6 +1,7 @@
-import { View, Text, TouchableOpacity, Alert } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "../store/authStore";
+import { useAlert } from "../context/AlertContext";
 import styles from "../assets/styles/profile.styles";
 import { Ionicons } from "@expo/vector-icons";
 import COLORS from "../constants/colors";
@@ -8,15 +9,25 @@ import COLORS from "../constants/colors";
 export default function LogoutButton() {
   const { logout } = useAuthStore();
   const router = useRouter();
+  const { showAlert } = useAlert();
 
   const confirmLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Logout", onPress: async () => {
-        await logout();
-        router.replace("/(auth)");
-      }, style: "destructive" },
-    ]);
+    showAlert({
+      title: "Logout",
+      message: "Are you sure you want to log out of BookWorm?",
+      type: "confirm",
+      buttons: [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            await logout();
+            router.replace("/(auth)");
+          },
+        },
+      ],
+    });
   };
 
   return (

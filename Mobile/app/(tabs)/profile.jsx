@@ -12,7 +12,7 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { API_URL } from "../../constants/api";
 import { useAuthStore } from "../../store/authStore";
 import styles from "../../assets/styles/profile.styles";
@@ -24,16 +24,29 @@ import { Image } from "expo-image";
 import Loader from "../../components/Loader";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
+import { sleep } from "../../lib/utils";
 
 import { useAlert } from "../../context/AlertContext";
+import ImageViewerModal from "../../components/ImageViewerModal";
+import EditBookModal from "../../components/EditBookModal";
 
 export default function Profile() {
   const { showAlert } = useAlert();
+  const params = useLocalSearchParams();
   const [books, setBooks] = useState([]);
   const [savedCount, setSavedCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [deleteBookId, setDeleteBookId] = useState(null);
+
+  // Edit Book Recommendation State
+  const [editBookModalVisible, setEditBookModalVisible] = useState(false);
+  const [selectedEditBook, setSelectedEditBook] = useState(null);
+
+  // Full Screen Profile Image Viewer State
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [viewerImageUri, setViewerImageUri] = useState(null);
+  const [viewerTitle, setViewerTitle] = useState("");
 
   // Edit Profile Modal State
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -47,6 +60,27 @@ export default function Profile() {
 
   const { token, user, updateUser, logout } = useAuthStore();
   const router = useRouter();
+
+  useEffect(() => {
+    if (params?.edit === "true" && user) {
+      setEditUsername(user.username || "");
+      setEditBio(user.bio || "");
+      setEditFavoriteGenre(user.favoriteGenre || "");
+      setEditReadingGoal(user.readingGoal ? String(user.readingGoal) : "");
+      setNewAvatarUri(null);
+      setNewAvatarBase64(null);
+      setEditModalVisible(true);
+    }
+  }, [params?.edit, user]);
+
+  const openAvatarViewer = () => {
+    const uri =
+      user?.profileImage ||
+      `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username}`;
+    setViewerImageUri(uri);
+    setViewerTitle(user?.username || "Profile Picture");
+    setViewerVisible(true);
+  };
 
   const fetchProfileData = async () => {
     try {
@@ -214,7 +248,16 @@ export default function Profile() {
 
   const renderBookItem = ({ item }) => (
     <View style={styles.bookItem}>
-      <Image source={{ uri: item.image }} style={styles.bookImage} contentFit="cover" />
+      <TouchableOpacity
+        onPress={() => {
+          setViewerImageUri(item.image);
+          setViewerTitle(item.title);
+          setViewerVisible(true);
+        }}
+        activeOpacity={0.85}
+      >
+        <Image source={{ uri: item.image }} style={styles.bookImage} contentFit="contain" />
+      </TouchableOpacity>
       <View style={styles.bookInfo}>
         <Text style={styles.bookTitle} numberOfLines={1}>
           {item.title}
@@ -226,13 +269,25 @@ export default function Profile() {
         <Text style={styles.bookDate}>{new Date(item.createdAt).toLocaleDateString()}</Text>
       </View>
 
-      <TouchableOpacity style={styles.deleteButton} onPress={() => confirmDelete(item._id)}>
-        {deleteBookId === item._id ? (
-          <ActivityIndicator size="small" color={COLORS.primary} />
-        ) : (
-          <Ionicons name="trash-outline" size={20} color={COLORS.primary} />
-        )}
-      </TouchableOpacity>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => {
+            setSelectedEditBook(item);
+            setEditBookModalVisible(true);
+          }}
+        >
+          <Ionicons name="create-outline" size={20} color={COLORS.primary} />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.deleteButton} onPress={() => confirmDelete(item._id)}>
+          {deleteBookId === item._id ? (
+            <ActivityIndicator size="small" color={COLORS.primary} />
+          ) : (
+            <Ionicons name="trash-outline" size={20} color={COLORS.primary} />
+          )}
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -253,6 +308,25 @@ export default function Profile() {
   };
 
   if (isLoading && !refreshing) return <Loader />;
+
+  const handleLogout = () => {
+    showAlert({
+      title: "Logout",
+      message: "Are you sure you want to log out of BookWorm?",
+      type: "confirm",
+      buttons: [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            await logout();
+            router.replace("/(auth)");
+          },
+        },
+      ],
+    });
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
@@ -278,7 +352,8 @@ export default function Profile() {
               booksSavedCount={savedCount}
               avgRating={avgRating}
               onEditPress={openEditModal}
-              onLogoutPress={logout}
+              onLogoutPress={handleLogout}
+              onAvatarPress={openAvatarViewer}
             />
 
             {/* MY RECOMMENDATIONS HEADER */}
@@ -423,6 +498,22 @@ export default function Profile() {
           </ScrollView>
         </View>
       </Modal>
+
+      {/* EDIT BOOK RECOMMENDATION MODAL */}
+      <EditBookModal
+        visible={editBookModalVisible}
+        book={selectedEditBook}
+        onClose={() => setEditBookModalVisible(false)}
+        onBookUpdated={() => fetchProfileData()}
+      />
+
+      {/* FULL SCREEN PROFILE IMAGE VIEWER MODAL */}
+      <ImageViewerModal
+        visible={viewerVisible}
+        imageUri={viewerImageUri}
+        title={viewerTitle}
+        onClose={() => setViewerVisible(false)}
+      />
     </SafeAreaView>
   );
 }

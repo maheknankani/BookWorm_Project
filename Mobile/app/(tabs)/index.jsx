@@ -23,6 +23,9 @@ import { formatPublishDate, sleep } from "../../lib/utils";
 import COLORS from "../../constants/colors";
 import Loader from "../../components/Loader";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAlert } from "../../context/AlertContext";
+import ImageViewerModal from "../../components/ImageViewerModal";
+import EditBookModal from "../../components/EditBookModal";
 
 const LIBRARY_CATEGORIES = [
   { key: "want_to_read", label: "Want to Read" },
@@ -31,8 +34,24 @@ const LIBRARY_CATEGORIES = [
 ];
 
 export default function Home() {
-  const { token } = useAuthStore();
+  const { showAlert } = useAlert();
+  const { token, user } = useAuthStore();
   const router = useRouter();
+
+  // Edit Recommendation State
+  const [editBookModalVisible, setEditBookModalVisible] = useState(false);
+  const [selectedEditBook, setSelectedEditBook] = useState(null);
+
+  // Full Screen Profile Image Viewer State
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [viewerImageUri, setViewerImageUri] = useState(null);
+  const [viewerTitle, setViewerTitle] = useState("");
+
+  const openAvatarViewer = (uri, username) => {
+    setViewerImageUri(uri);
+    setViewerTitle(username || "Profile Picture");
+    setViewerVisible(true);
+  };
 
   const [books, setBooks] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -202,7 +221,7 @@ export default function Home() {
       setLibraryModalVisible(false);
       setSelectedBookForLibrary(null);
     } catch (error) {
-      Alert.alert("Error", error.message || "Failed to update library status");
+      showAlert({ title: "Error", message: error.message || "Failed to update library status", type: "error" });
     }
   };
 
@@ -223,7 +242,7 @@ export default function Home() {
       setLibraryModalVisible(false);
       setSelectedBookForLibrary(null);
     } catch (error) {
-      Alert.alert("Error", error.message || "Failed to remove from library");
+      showAlert({ title: "Error", message: error.message || "Failed to remove from library", type: "error" });
     }
   };
 
@@ -243,33 +262,64 @@ export default function Home() {
         onPress={() => router.push(`/book/${item._id}`)}
       >
         <View style={styles.bookHeader}>
-          <View style={styles.userInfo}>
+          <TouchableOpacity
+            style={styles.userInfo}
+            onPress={() =>
+              openAvatarViewer(
+                item.user?.profileImage || "https://avatar.iran.liara.run/public",
+                item.user?.username || "Book Lover"
+              )
+            }
+            activeOpacity={0.8}
+          >
             <Image
               source={{ uri: item.user?.profileImage || "https://avatar.iran.liara.run/public" }}
               style={styles.avatar}
             />
             <Text style={styles.username}>{item.user?.username || "Book Lover"}</Text>
-          </View>
-
-          {/* BOOKMARK BUTTON */}
-          <TouchableOpacity
-            onPress={() => {
-              setSelectedBookForLibrary(item);
-              setLibraryModalVisible(true);
-            }}
-            style={{ padding: 4 }}
-          >
-            <Ionicons
-              name={currentStatus ? "bookmark" : "bookmark-outline"}
-              size={22}
-              color={currentStatus ? COLORS.primary : COLORS.textSecondary}
-            />
           </TouchableOpacity>
+
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            {/* EDIT BUTTON IF AUTHOR */}
+            {user && item.user?._id === user.id && (
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedEditBook(item);
+                  setEditBookModalVisible(true);
+                }}
+                style={{ padding: 4 }}
+              >
+                <Ionicons name="create-outline" size={20} color={COLORS.primary} />
+              </TouchableOpacity>
+            )}
+
+            {/* BOOKMARK BUTTON */}
+            <TouchableOpacity
+              onPress={() => {
+                setSelectedBookForLibrary(item);
+                setLibraryModalVisible(true);
+              }}
+              style={{ padding: 4 }}
+            >
+              <Ionicons
+                name={currentStatus ? "bookmark" : "bookmark-outline"}
+                size={22}
+                color={currentStatus ? COLORS.primary : COLORS.textSecondary}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        <View style={styles.bookImageContainer}>
-          <Image source={{ uri: item.image }} style={styles.bookImage} contentFit="cover" />
-        </View>
+        <TouchableOpacity
+          style={styles.bookImageContainer}
+          onPress={(e) => {
+            e.stopPropagation();
+            openAvatarViewer(item.image, item.title);
+          }}
+          activeOpacity={0.9}
+        >
+          <Image source={{ uri: item.image }} style={styles.bookImage} contentFit="contain" />
+        </TouchableOpacity>
 
         <View style={styles.bookDetails}>
           <Text style={styles.bookTitle}>{item.title}</Text>
@@ -397,36 +447,6 @@ export default function Home() {
           <View style={styles.header}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <Text style={styles.headerTitle}>BookWorm 🐛</Text>
-
-              {/* NOTIFICATION BELL BUTTON */}
-              <TouchableOpacity
-                onPress={() => router.push("/notifications")}
-                style={{ padding: 6, position: "relative" }}
-              >
-                <Ionicons name="notifications-outline" size={26} color={COLORS.textPrimary} />
-                {unreadNotificationsCount > 0 && (
-                  <View
-                    style={{
-                      position: "absolute",
-                      top: 4,
-                      right: 4,
-                      backgroundColor: "#e53935",
-                      borderRadius: 10,
-                      minWidth: 18,
-                      height: 18,
-                      justifyContent: "center",
-                      alignItems: "center",
-                      paddingHorizontal: 4,
-                      borderWidth: 1.5,
-                      borderColor: COLORS.background,
-                    }}
-                  >
-                    <Text style={{ color: COLORS.white, fontSize: 10, fontWeight: "700" }}>
-                      {unreadNotificationsCount > 99 ? "99+" : unreadNotificationsCount}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
             </View>
 
             <Text style={styles.headerSubtitle}>
@@ -637,6 +657,22 @@ export default function Home() {
           </View>
         </View>
       </Modal>
+
+      {/* EDIT BOOK RECOMMENDATION MODAL */}
+      <EditBookModal
+        visible={editBookModalVisible}
+        book={selectedEditBook}
+        onClose={() => setEditBookModalVisible(false)}
+        onBookUpdated={() => fetchBooks(1, true)}
+      />
+
+      {/* FULL SCREEN PROFILE IMAGE VIEWER MODAL */}
+      <ImageViewerModal
+        visible={viewerVisible}
+        imageUri={viewerImageUri}
+        title={viewerTitle}
+        onClose={() => setViewerVisible(false)}
+      />
     </SafeAreaView>
   );
 }

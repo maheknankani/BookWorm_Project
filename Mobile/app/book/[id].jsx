@@ -22,6 +22,9 @@ import Loader from "../../components/Loader";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAlert } from "../../context/AlertContext";
+import CreateStoryModal from "../../components/CreateStoryModal";
+import ImageViewerModal from "../../components/ImageViewerModal";
+import EditBookModal from "../../components/EditBookModal";
 
 const LIBRARY_STATUSES = [
   { key: "want_to_read", label: "Want to Read" },
@@ -37,6 +40,12 @@ export default function BookDetails() {
 
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [editBookModalVisible, setEditBookModalVisible] = useState(false);
+
+  // Full Screen Image Viewer State
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [viewerImageUri, setViewerImageUri] = useState(null);
+  const [viewerTitle, setViewerTitle] = useState("");
 
   // Likes state
   const [likesCount, setLikesCount] = useState(0);
@@ -54,6 +63,7 @@ export default function BookDetails() {
   const [totalPages, setTotalPages] = useState(100);
   const [progressLoading, setProgressLoading] = useState(false);
   const [statusModalVisible, setStatusModalVisible] = useState(false);
+  const [storyModalVisible, setStoryModalVisible] = useState(false);
 
   const fetchBookDetails = async () => {
     try {
@@ -265,22 +275,42 @@ export default function BookDetails() {
         <Text style={localStyles.topBarTitle} numberOfLines={1}>
           {book.title}
         </Text>
-        <TouchableOpacity
-          style={localStyles.bookmarkButton}
-          onPress={() => setStatusModalVisible(true)}
-        >
-          <Ionicons
-            name={libraryStatus ? "bookmark" : "bookmark-outline"}
-            size={24}
-            color={libraryStatus ? COLORS.primary : COLORS.textPrimary}
-          />
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          {currentUser && book.user?._id === currentUser.id && (
+            <TouchableOpacity
+              style={localStyles.bookmarkButton}
+              onPress={() => setEditBookModalVisible(true)}
+            >
+              <Ionicons name="create-outline" size={22} color={COLORS.primary} />
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity
+            style={localStyles.bookmarkButton}
+            onPress={() => setStatusModalVisible(true)}
+          >
+            <Ionicons
+              name={libraryStatus ? "bookmark" : "bookmark-outline"}
+              size={24}
+              color={libraryStatus ? COLORS.primary : COLORS.textPrimary}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={localStyles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* COVER & MAIN INFO */}
         <View style={localStyles.coverSection}>
-          <Image source={{ uri: book.image }} style={localStyles.coverImage} contentFit="cover" />
+          <TouchableOpacity
+            onPress={() => {
+              setViewerImageUri(book.image);
+              setViewerTitle(book.title);
+              setViewerVisible(true);
+            }}
+            activeOpacity={0.85}
+          >
+            <Image source={{ uri: book.image }} style={localStyles.coverImage} contentFit="contain" />
+          </TouchableOpacity>
 
           <View style={localStyles.mainInfo}>
             <Text style={localStyles.bookTitle}>{book.title}</Text>
@@ -298,11 +328,16 @@ export default function BookDetails() {
           </View>
         </View>
 
-        {/* ACTION BUTTONS: READ & LIKE */}
+        {/* ACTION BUTTONS: READ, LIKE & SHARE STORY */}
         <View style={localStyles.actionsRow}>
           <TouchableOpacity style={localStyles.readButton} onPress={handleOpenPdf}>
-            <Ionicons name="document-text-outline" size={20} color={COLORS.white} />
-            <Text style={localStyles.readButtonText}>Read Book</Text>
+            <Ionicons name="document-text-outline" size={18} color={COLORS.white} />
+            <Text style={localStyles.readButtonText}>Read</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={localStyles.storyButton} onPress={() => setStoryModalVisible(true)}>
+            <Ionicons name="sparkles" size={18} color="#ffffff" />
+            <Text style={localStyles.storyButtonText}>Share Story</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -311,11 +346,11 @@ export default function BookDetails() {
           >
             <Ionicons
               name={isLiked ? "heart" : "heart-outline"}
-              size={20}
+              size={18}
               color={isLiked ? "#e53935" : COLORS.textPrimary}
             />
             <Text style={[localStyles.likeButtonText, isLiked && { color: "#e53935" }]}>
-              {likesCount} {likesCount === 1 ? "Like" : "Likes"}
+              {likesCount}
             </Text>
           </TouchableOpacity>
         </View>
@@ -483,6 +518,29 @@ export default function BookDetails() {
           </View>
         </View>
       </Modal>
+
+      <CreateStoryModal
+        visible={storyModalVisible}
+        onClose={() => setStoryModalVisible(false)}
+        initialBookTitle={book?.title}
+        initialBookCover={book?.image}
+        initialBookId={book?._id}
+        initialPageNumber={String(lastPageRead)}
+      />
+
+      <EditBookModal
+        visible={editBookModalVisible}
+        book={book}
+        onClose={() => setEditBookModalVisible(false)}
+        onBookUpdated={(updated) => setBook(updated)}
+      />
+
+      <ImageViewerModal
+        visible={viewerVisible}
+        imageUri={viewerImageUri}
+        title={viewerTitle}
+        onClose={() => setViewerVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -589,7 +647,22 @@ const localStyles = StyleSheet.create({
   readButtonText: {
     color: COLORS.white,
     fontWeight: "700",
-    fontSize: 15,
+    fontSize: 14,
+  },
+  storyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#1b4323",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    gap: 6,
+  },
+  storyButtonText: {
+    color: "#ffffff",
+    fontWeight: "700",
+    fontSize: 13,
   },
   likeButton: {
     flexDirection: "row",

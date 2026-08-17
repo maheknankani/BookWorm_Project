@@ -12,6 +12,7 @@ export default function ProfileHeader({
   avgRating = "0.0",
   onEditPress,
   onLogoutPress,
+  onAvatarPress,
 }) {
   const { user } = useAuthStore();
 
@@ -23,7 +24,11 @@ export default function ProfileHeader({
     <View style={styles.card}>
       {/* TOP USER INFO SECTION */}
       <View style={styles.topSection}>
-        <View style={styles.avatarContainer}>
+        <TouchableOpacity
+          style={styles.avatarContainer}
+          onPress={onAvatarPress}
+          activeOpacity={0.85}
+        >
           <Image
             source={{
               uri:
@@ -35,7 +40,7 @@ export default function ProfileHeader({
           <View style={styles.verifiedBadge}>
             <Ionicons name="checkmark-sharp" size={12} color={COLORS.white} />
           </View>
-        </View>
+        </TouchableOpacity>
 
         <View style={styles.userInfo}>
           <Text style={styles.displayName}>{user.username}</Text>
@@ -150,11 +155,6 @@ export default function ProfileHeader({
         <TouchableOpacity style={styles.editButton} onPress={onEditPress}>
           <Ionicons name="create-outline" size={18} color={COLORS.white} />
           <Text style={styles.editButtonText}>Edit Profile</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.logoutButtonSmall} onPress={onLogoutPress}>
-          <Ionicons name="log-out-outline" size={18} color="#e53935" />
-          <Text style={styles.logoutButtonSmallText}>Logout</Text>
         </TouchableOpacity>
       </View>
     </View>
