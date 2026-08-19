@@ -58,4 +58,30 @@ router.patch("/:id/read", protectRoute, async (req, res) => {
   }
 });
 
+// Delete single notification
+router.delete("/:id", protectRoute, async (req, res) => {
+  try {
+    const notification = await Notification.findOneAndDelete({
+      _id: req.params.id,
+      recipient: req.user._id,
+    });
+    if (!notification) return res.status(404).json({ message: "Notification not found" });
+    res.json({ message: "Notification deleted successfully", id: req.params.id });
+  } catch (error) {
+    console.error("Error deleting notification:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Delete all notifications for current user
+router.delete("/", protectRoute, async (req, res) => {
+  try {
+    await Notification.deleteMany({ recipient: req.user._id });
+    res.json({ message: "All notifications deleted" });
+  } catch (error) {
+    console.error("Error deleting all notifications:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 export default router;

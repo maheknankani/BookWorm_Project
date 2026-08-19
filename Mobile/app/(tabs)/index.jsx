@@ -428,7 +428,12 @@ export default function Home() {
         renderItem={renderItem}
         keyExtractor={(item) => item._id}
         contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
+        removeClippedSubviews={true}
+        initialNumToRender={8}
+        maxToRenderPerBatch={10}
+        windowSize={7}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

@@ -89,7 +89,7 @@ export default function MoreDrawerModal({ visible, onClose }) {
             onPress: async () => {
               const { logout } = useAuthStore.getState();
               await logout();
-              router.replace("/(auth)/login");
+              router.replace("/(auth)");
             },
           },
         ],
@@ -151,6 +151,7 @@ export default function MoreDrawerModal({ visible, onClose }) {
 
               {/* UNIQUE NON-DUPLICATED MENU ITEMS */}
               <View style={styles.menuList}>
+
                 {/* NOTIFICATIONS */}
                 <TouchableOpacity
                   style={styles.menuItem}
@@ -184,7 +185,7 @@ export default function MoreDrawerModal({ visible, onClose }) {
                 {/* HELP & SUPPORT */}
                 <TouchableOpacity
                   style={styles.menuItem}
-                  onPress={handleShowHelp}
+                  onPress={() => handleNavigate("/help-support")}
                 >
                   <View style={[styles.iconBox, { backgroundColor: "#fdf4ff" }]}>
                     <Ionicons name="help-circle-outline" size={20} color="#a855f7" />

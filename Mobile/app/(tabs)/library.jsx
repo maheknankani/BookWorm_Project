@@ -153,35 +153,37 @@ export default function Library() {
     if (!book) return null;
 
     return (
-      <TouchableOpacity
-        style={styles.card}
-        activeOpacity={0.9}
-        onPress={() => router.push(`/book/${book._id}`)}
-      >
-        <Image source={{ uri: book.image }} style={styles.bookImage} contentFit="cover" />
+      <View style={styles.card}>
+        <TouchableOpacity
+          style={styles.cardMainContent}
+          activeOpacity={0.7}
+          onPress={() => router.push(`/book/${book._id}`)}
+        >
+          <Image source={{ uri: book.image }} style={styles.bookImage} contentFit="cover" />
 
-        <View style={styles.infoContainer}>
-          <Text style={styles.bookTitle} numberOfLines={1}>
-            {book.title}
-          </Text>
-          <View style={styles.ratingContainer}>{renderRatingStars(book.rating)}</View>
-          <Text style={styles.userText}>Shared by {book.user?.username || "Community"}</Text>
+          <View style={styles.infoContainer}>
+            <Text style={styles.bookTitle} numberOfLines={1}>
+              {book.title}
+            </Text>
+            <View style={styles.ratingContainer}>{renderRatingStars(book.rating)}</View>
+            <Text style={styles.userText}>Shared by {book.user?.username || "Community"}</Text>
 
-          {/* PROGRESS OR STATUS BADGE */}
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 }}>
-            <View style={styles.statusBadge}>
-              <Text style={styles.statusBadgeText}>
-                {CATEGORIES.find((c) => c.key === item.status)?.label || "Saved"}
-              </Text>
+            {/* PROGRESS OR STATUS BADGE */}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+              <View style={styles.statusBadge}>
+                <Text style={styles.statusBadgeText}>
+                  {CATEGORIES.find((c) => c.key === item.status)?.label || "Saved"}
+                </Text>
+              </View>
+
+              {item.lastPageRead ? (
+                <Text style={{ fontSize: 11, color: COLORS.textSecondary, fontWeight: "500" }} numberOfLines={1}>
+                  Page {item.lastPageRead} of {item.totalPages || 100}
+                </Text>
+              ) : null}
             </View>
-
-            {item.lastPageRead ? (
-              <Text style={{ fontSize: 11, color: COLORS.textSecondary, fontWeight: "500" }}>
-                Page {item.lastPageRead} of {item.totalPages || 100}
-              </Text>
-            ) : null}
           </View>
-        </View>
+        </TouchableOpacity>
 
         <View style={styles.actionsContainer}>
           <TouchableOpacity
@@ -201,7 +203,7 @@ export default function Library() {
             <Ionicons name="trash-outline" size={18} color={COLORS.textSecondary} />
           </TouchableOpacity>
         </View>
-      </TouchableOpacity>
+      </View>
     );
   };
 
@@ -248,7 +250,12 @@ export default function Library() {
         renderItem={renderBookCard}
         keyExtractor={(item) => item._id}
         contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
+        removeClippedSubviews={true}
+        initialNumToRender={8}
+        maxToRenderPerBatch={10}
+        windowSize={7}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

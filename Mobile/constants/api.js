@@ -1,16 +1,6 @@
-import Constants from "expo-constants";
-import { Platform } from "react-native";
+// Set API_URL to local server IP (matching your Expo server 192.168.100.11) or Vercel
+export const LOCAL_API_URL = "http://192.168.100.11:5000/api";
+export const PROD_API_URL = "https://book-worm-project-mauve.vercel.app/api";
 
-const getApiUrl = () => {
-  // If explicitly using local development server on port 3000:
-  const hostUri = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost;
-  if (hostUri) {
-    const ip = hostUri.split(":")[0];
-    return `http://${ip}:3000/api`;
-  }
-
-  // Fallback to Vercel Production API endpoint
-  return "https://book-worm-project-mauve.vercel.app/api";
-};
-
-export const API_URL = getApiUrl();
+// Use LOCAL_API_URL during local development so backend changes on port 5000 work immediately
+export const API_URL = LOCAL_API_URL;

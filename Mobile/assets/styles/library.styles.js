@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 80,
+    paddingBottom: 100,
   },
   card: {
     flexDirection: "row",
@@ -69,15 +69,24 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
     alignItems: "center",
+    overflow: "hidden",
+  },
+  cardMainContent: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
   },
   bookImage: {
     width: 70,
     height: 95,
     borderRadius: 10,
     backgroundColor: COLORS.border,
+    overflow: "hidden",
+    flexShrink: 0,
   },
   infoContainer: {
     flex: 1,
+    minWidth: 0,
     marginLeft: 12,
     justifyContent: "center",
   },
@@ -113,7 +122,7 @@ const styles = StyleSheet.create({
   actionsContainer: {
     justifyContent: "space-between",
     alignItems: "flex-end",
-    height: "100%",
+    alignSelf: "stretch",
     paddingLeft: 8,
   },
   statusPickerButton: {

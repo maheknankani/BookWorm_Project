@@ -110,7 +110,7 @@ export default function AnimatedSplashScreen() {
         useNativeDriver: true,
       }).start(() => {
         floatLoop.stop();
-        const { user: currentUser, token: currentToken } = authRef.current;
+        const { user: currentUser, token: currentToken } = useAuthStore.getState();
         const isSignedIn = Boolean(currentUser && currentToken);
         if (isSignedIn) {
           router.replace("/(tabs)");

@@ -1,4 +1,5 @@
 import express from "express";
+import http from "http";
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
@@ -13,11 +14,15 @@ import authRoutes from "./routes/authRoutes.js";
 import bookRoutes from "./routes/bookRoutes.js";
 import libraryRoutes from "./routes/libraryRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
-import storyRoutes from "./routes/storyRoutes.js";
 
 import { connectDB } from "./lib/db.js";
+import { initSocket } from "./lib/socket.js";
 
 const app = express();
+const server = http.createServer(app);
+
+// Initialize Socket.IO
+initSocket(server);
 
 app.use(express.json({ limit: "15mb" }));
 app.use(express.urlencoded({ limit: "15mb", extended: true }));
@@ -53,7 +58,7 @@ app.use(async (req, res, next) => {
   const isConnected = await connectDB();
   if (!isConnected) {
     return res.status(500).json({
-      message: "Database connection failed. Please verify MONGO_URI and MongoDB Atlas IP Network Access (allow 0.0.0.0/0).",
+      message: "Database connection failed. Please verify MONGO_URI.",
     });
   }
   next();
@@ -63,8 +68,14 @@ app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
 app.use("/api/library", libraryRoutes);
 app.use("/api/notifications", notificationRoutes);
-app.use("/api/stories", storyRoutes);
 
 connectDB();
+
+const PORT = process.env.PORT || 5000;
+if (process.env.NODE_ENV !== "test") {
+  server.listen(PORT, () => {
+    console.log(`[Server] BookWorm API & Socket.IO server running on port ${PORT}`);
+  });
+}
 
 export default app;

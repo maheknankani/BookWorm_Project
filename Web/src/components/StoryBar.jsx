@@ -7,8 +7,9 @@ export default function StoryBar({
   onOpenCreateStory,
   onSelectStoryGroup,
 }) {
-  const currentUserGroup = storyGroups.find((g) => g.isCurrentUser)
-  const otherGroups = storyGroups.filter((g) => !g.isCurrentUser)
+  const safeGroups = Array.isArray(storyGroups) ? storyGroups : []
+  const currentUserGroup = safeGroups.find((g) => g && g.isCurrentUser)
+  const otherGroups = safeGroups.filter((g) => g && !g.isCurrentUser)
 
   return (
     <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-8 select-none">

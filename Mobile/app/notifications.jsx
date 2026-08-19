@@ -7,6 +7,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
@@ -62,6 +63,46 @@ export default function Notifications() {
     }
   };
 
+  const handleDeleteNotification = async (id) => {
+    try {
+      setNotifications((prev) => prev.filter((n) => n._id !== id));
+
+      await fetch(`${API_URL}/notifications/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+    }
+  };
+
+  const handleDeleteAll = () => {
+    if (notifications.length === 0) return;
+
+    Alert.alert(
+      "Delete All Notifications",
+      "Are you sure you want to delete all notifications?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete All",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setNotifications([]);
+              await fetch(`${API_URL}/notifications`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` },
+              });
+            } catch (error) {
+              console.error("Error deleting all notifications:", error);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleNotificationPress = async (item) => {
     try {
       if (!item.isRead) {
@@ -75,8 +116,9 @@ export default function Notifications() {
         });
       }
 
-      if (item.book?._id) {
-        router.push(`/book/${item.book._id}`);
+      if (item.book) {
+        const bookId = typeof item.book === "object" ? item.book._id : item.book;
+        if (bookId) router.push(`/book/${bookId}`);
       }
     } catch (error) {
       console.error("Error navigating notification:", error);
@@ -97,55 +139,80 @@ export default function Notifications() {
   const renderItem = ({ item }) => {
     const sender = item.sender || {};
     const book = item.book || {};
-    const isLike = item.type === "like";
+    const type = item.type;
+
+    let iconName = "heart";
+    let iconColor = "#e53935";
+    let badgeBg = "#ffebee";
+    let textContent = "";
+
+    if (type === "like") {
+      iconName = "heart";
+      iconColor = "#e53935";
+      badgeBg = "#ffebee";
+      textContent = `liked your recommendation "${book.title || "your book"}"`;
+    } else if (type === "comment") {
+      iconName = "chatbubble";
+      iconColor = COLORS.primary;
+      badgeBg = "#eef7ee";
+      textContent = `commented on "${book.title || "your book"}"`;
+    }
 
     return (
-      <TouchableOpacity
-        style={[styles.notificationCard, !item.isRead && styles.unreadCard]}
-        onPress={() => handleNotificationPress(item)}
-      >
-        {/* SENDER AVATAR & TYPE BADGE */}
-        <View style={styles.avatarWrapper}>
-          <Image
-            source={{
-              uri: sender.profileImage || "https://avatar.iran.liara.run/public",
-            }}
-            style={styles.avatar}
-          />
-          <View style={[styles.typeBadge, { backgroundColor: isLike ? "#ffebee" : "#e3f2fd" }]}>
-            <Ionicons
-              name={isLike ? "heart" : "chatbubble"}
-              size={10}
-              color={isLike ? "#e53935" : COLORS.primary}
+      <View style={[styles.notificationCard, !item.isRead && styles.unreadCard]}>
+        <TouchableOpacity
+          style={styles.cardMainContent}
+          onPress={() => handleNotificationPress(item)}
+          activeOpacity={0.7}
+        >
+          {/* SENDER AVATAR & TYPE BADGE */}
+          <View style={styles.avatarWrapper}>
+            <Image
+              source={{
+                uri: sender.profileImage || "https://res.cloudinary.com/dytv9l0px/image/upload/v1727788480/user_pfp_placeholder.png",
+              }}
+              style={styles.avatar}
             />
+            <View style={[styles.typeBadge, { backgroundColor: badgeBg }]}>
+              <Ionicons name={iconName} size={10} color={iconColor} />
+            </View>
           </View>
-        </View>
 
-        {/* CONTENT */}
-        <View style={styles.contentContainer}>
-          <Text style={styles.messageText}>
-            <Text style={styles.usernameText}>{sender.username || "Someone"} </Text>
-            {isLike ? "liked your recommendation " : "commented on "}
-            <Text style={styles.bookTitleText}>"{book.title || "your book"}"</Text>
-          </Text>
-
-          {item.commentText ? (
-            <Text style={styles.commentSnippet} numberOfLines={1}>
-              "{item.commentText}"
+          {/* CONTENT */}
+          <View style={styles.contentContainer}>
+            <Text style={styles.messageText}>
+              <Text style={styles.usernameText}>{sender.username || "Someone"} </Text>
+              {textContent}
             </Text>
-          ) : null}
 
-          <Text style={styles.timeText}>{formatTimeAgo(item.createdAt)}</Text>
-        </View>
+            {item.commentText ? (
+              <Text style={styles.commentSnippet} numberOfLines={1}>
+                "{item.commentText}"
+              </Text>
+            ) : null}
 
-        {/* UNREAD DOT OR BOOK COVER */}
-        <View style={styles.rightSection}>
-          {book.image ? (
-            <Image source={{ uri: book.image }} style={styles.bookThumb} contentFit="cover" />
-          ) : null}
-          {!item.isRead && <View style={styles.unreadDot} />}
-        </View>
-      </TouchableOpacity>
+            <Text style={styles.timeText}>{formatTimeAgo(item.createdAt)}</Text>
+          </View>
+
+          {/* UNREAD DOT OR BOOK COVER */}
+          <View style={styles.rightSection}>
+            {book.image ? (
+              <Image source={{ uri: book.image }} style={styles.bookThumb} contentFit="cover" />
+            ) : null}
+            {!item.isRead && <View style={styles.unreadDot} />}
+          </View>
+        </TouchableOpacity>
+
+        {/* DELETE BUTTON */}
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDeleteNotification(item._id)}
+          activeOpacity={0.6}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="trash-outline" size={18} color="#e53935" />
+        </TouchableOpacity>
+      </View>
     );
   };
 
@@ -161,9 +228,15 @@ export default function Notifications() {
 
         <Text style={styles.topBarTitle}>Notifications</Text>
 
-        <TouchableOpacity onPress={handleMarkAllRead} style={styles.markReadButton}>
-          <Text style={styles.markReadText}>Read All</Text>
-        </TouchableOpacity>
+        <View style={styles.headerRightActions}>
+          <TouchableOpacity onPress={handleMarkAllRead} style={styles.markReadButton}>
+            <Text style={styles.markReadText}>Read All</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={handleDeleteAll} style={styles.deleteAllButton}>
+            <Ionicons name="trash-outline" size={20} color="#e53935" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* NOTIFICATIONS LIST */}
@@ -172,7 +245,12 @@ export default function Notifications() {
         renderItem={renderItem}
         keyExtractor={(item) => item._id}
         contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
+        removeClippedSubviews={true}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={7}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -222,6 +300,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: COLORS.textPrimary,
   },
+  headerRightActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
   markReadButton: {
     padding: 4,
   },
@@ -229,6 +312,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     color: COLORS.primary,
+  },
+  deleteAllButton: {
+    padding: 4,
   },
   listContainer: {
     padding: 16,
@@ -238,10 +324,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: COLORS.cardBackground,
     borderRadius: 14,
-    padding: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     marginBottom: 10,
     borderWidth: 1,
     borderColor: COLORS.border,
+  },
+  cardMainContent: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  deleteButton: {
+    padding: 8,
+    marginLeft: 6,
+    justifyContent: "center",
+    alignItems: "center",
   },
   unreadCard: {
     backgroundColor: "#f0f7ff",

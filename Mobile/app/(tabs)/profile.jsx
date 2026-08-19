@@ -334,8 +334,13 @@ export default function Profile() {
         data={books}
         renderItem={renderBookItem}
         keyExtractor={(item) => item._id}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
         contentContainerStyle={styles.booksList}
+        removeClippedSubviews={true}
+        initialNumToRender={8}
+        maxToRenderPerBatch={10}
+        windowSize={7}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

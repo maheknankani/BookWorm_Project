@@ -6,12 +6,10 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
   Image,
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
+  StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -22,34 +20,19 @@ import { useAuthStore } from "../store/authStore";
 export default function CreateStoryModal({
   visible,
   onClose,
-  initialBookTitle = "",
-  initialBookCover = "",
-  initialBookId = null,
-  initialQuote = "",
-  initialPageNumber = "",
   onStoryCreated,
 }) {
   const { token } = useAuthStore();
-  const [activeTab, setActiveTab] = useState("media"); // "media" | "quote"
   const [selectedMedia, setSelectedMedia] = useState(null); // { uri, type: 'image'|'video', base64 }
   const [caption, setCaption] = useState("");
-  const [bookTitle, setBookTitle] = useState(initialBookTitle);
-  const [bookCover, setBookCover] = useState(initialBookCover);
-  const [quote, setQuote] = useState(initialQuote);
-  const [pageNumber, setPageNumber] = useState(initialPageNumber);
   const [publishing, setPublishing] = useState(false);
 
   useEffect(() => {
     if (visible) {
-      setBookTitle(initialBookTitle || "");
-      setBookCover(initialBookCover || "");
-      setQuote(initialQuote || "");
-      setPageNumber(initialPageNumber || "");
       setSelectedMedia(null);
       setCaption("");
-      setActiveTab(initialQuote ? "quote" : "media");
     }
-  }, [visible, initialBookTitle, initialBookCover, initialQuote, initialPageNumber]);
+  }, [visible]);
 
   // Pick media from Gallery
   const handlePickFromGallery = async () => {
@@ -61,389 +44,293 @@ export default function CreateStoryModal({
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        quality: 0.8,
+        quality: 0.85,
         base64: true,
       });
 
-      if (!result.canceled && result.assets && result.assets[0]) {
+      if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        const isVideo = asset.type === "video";
-        const base64Data = asset.base64
-          ? `data:${isVideo ? "video/mp4" : "image/jpeg"};base64,${asset.base64}`
-          : asset.uri;
-
         setSelectedMedia({
           uri: asset.uri,
-          type: isVideo ? "video" : "image",
-          base64: base64Data,
+          type: "image",
+          base64: asset.base64,
         });
       }
     } catch (err) {
-      console.error("Pick media error:", err);
-      Alert.alert("Error", "Could not load media from gallery.");
+      console.error("Gallery picker error:", err);
     }
   };
 
   // Capture from Camera
-  const handleLaunchCamera = async () => {
+  const handleTakePhoto = async () => {
     try {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert("Permission Required", "Please grant camera permission to capture a photo.");
+        Alert.alert("Permission Required", "Please grant camera permission to take a story photo.");
         return;
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        quality: 0.8,
+        quality: 0.85,
         base64: true,
       });
 
-      if (!result.canceled && result.assets && result.assets[0]) {
+      if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        const isVideo = asset.type === "video";
-        const base64Data = asset.base64
-          ? `data:${isVideo ? "video/mp4" : "image/jpeg"};base64,${asset.base64}`
-          : asset.uri;
-
         setSelectedMedia({
           uri: asset.uri,
-          type: isVideo ? "video" : "image",
-          base64: base64Data,
+          type: "image",
+          base64: asset.base64,
         });
       }
     } catch (err) {
       console.error("Camera error:", err);
-      Alert.alert("Error", "Could not capture camera media.");
     }
   };
 
-  const handlePublish = async () => {
-    if (activeTab === "media" && !selectedMedia) {
-      Alert.alert("Media Required", "Please select a photo or video from your gallery/camera, or switch to Quote story.");
-      return;
-    }
-    if (activeTab === "quote" && !quote.trim()) {
-      Alert.alert("Quote Required", "Please enter a book quote or excerpt.");
+  // Submit Story to Backend
+  const handlePublishStory = async () => {
+    if (!selectedMedia) {
+      Alert.alert("Photo Required", "Please select a photo from your gallery or take one with camera.");
       return;
     }
 
     try {
       setPublishing(true);
-      const payload = {
-        media: selectedMedia ? selectedMedia.base64 : "",
-        mediaType: selectedMedia ? selectedMedia.type : "quote",
-        caption: caption.trim(),
-        bookId: initialBookId || null,
-        bookTitle: bookTitle.trim(),
-        bookCover: bookCover.trim(),
-        quote: quote.trim(),
-        pageNumber: pageNumber.trim(),
-      };
+
+      let mediaPayload = "";
+      if (selectedMedia?.base64) {
+        mediaPayload = `data:image/jpeg;base64,${selectedMedia.base64}`;
+      } else if (selectedMedia?.uri) {
+        mediaPayload = selectedMedia.uri;
+      }
 
       const response = await fetch(`${API_URL}/stories`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          mediaUrl: mediaPayload,
+          mediaType: "image",
+          caption: caption.trim(),
+        }),
       });
 
-      const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.message || "Failed to publish story.");
+        const errData = await response.json().catch(() => null);
+        throw new Error(errData?.message || "Failed to post story");
       }
 
-      Alert.alert("Story Posted! 📸", "Your Instagram story has been shared to your community.");
-      if (onStoryCreated) onStoryCreated(data.story);
+      if (onStoryCreated) onStoryCreated();
       onClose();
-    } catch (error) {
-      console.error("Publish story error:", error);
-      Alert.alert("Error", error.message || "Could not publish story.");
+    } catch (err) {
+      console.error("Publish story error:", err);
+      Alert.alert("Error", err.message || "Failed to publish story.");
     } finally {
       setPublishing(false);
     }
   };
 
+  if (!visible) return null;
+
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={styles.modalOverlay}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <View style={styles.container}>
-          {/* HEADER */}
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.overlay}>
+        <StatusBar backgroundColor="rgba(0,0,0,0.5)" barStyle="light-content" />
+
+        <View style={styles.modalContent}>
+          {/* HEADER ROW */}
           <View style={styles.header}>
+            <Text style={styles.headerTitle}>Add to your Story</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <Ionicons name="close" size={24} color={COLORS.textPrimary} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Create Story</Text>
-            <TouchableOpacity
-              onPress={handlePublish}
-              disabled={publishing}
-              style={[styles.publishBtn, publishing && { opacity: 0.6 }]}
-            >
-              {publishing ? (
-                <ActivityIndicator size="small" color="#ffffff" />
-              ) : (
-                <Text style={styles.publishBtnText}>Post Story</Text>
-              )}
-            </TouchableOpacity>
           </View>
 
-          {/* TAB MODE SWITCHER */}
-          <View style={styles.tabContainer}>
-            <TouchableOpacity
-              style={[styles.tabBtn, activeTab === "media" && styles.activeTabBtn]}
-              onPress={() => setActiveTab("media")}
-            >
-              <Ionicons
-                name="camera-outline"
-                size={18}
-                color={activeTab === "media" ? COLORS.primary : COLORS.textSecondary}
+          {/* PREVIEW OR PICKER OPTIONS */}
+          {selectedMedia ? (
+            <View style={styles.previewContainer}>
+              <Image source={{ uri: selectedMedia.uri }} style={styles.previewImage} resizeMode="cover" />
+
+              <TextInput
+                style={styles.captionInput}
+                value={caption}
+                onChangeText={setCaption}
+                placeholder="Write a caption..."
+                placeholderTextColor={COLORS.textSecondary}
               />
-              <Text style={[styles.tabText, activeTab === "media" && styles.activeTabText]}>
-                Photo / Video
-              </Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.tabBtn, activeTab === "quote" && styles.activeTabBtn]}
-              onPress={() => setActiveTab("quote")}
-            >
-              <Ionicons
-                name="book-outline"
-                size={18}
-                color={activeTab === "quote" ? COLORS.primary : COLORS.textSecondary}
-              />
-              <Text style={[styles.tabText, activeTab === "quote" && styles.activeTabText]}>
-                Book Quote
-              </Text>
-            </TouchableOpacity>
-          </View>
+              <View style={styles.actionRow}>
+                <TouchableOpacity
+                  style={styles.changeMediaBtn}
+                  onPress={() => setSelectedMedia(null)}
+                >
+                  <Text style={styles.changeMediaText}>Retake / Pick Another</Text>
+                </TouchableOpacity>
 
-          <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
-            {activeTab === "media" ? (
-              <View>
-                {/* MEDIA SELECTION AREA */}
-                {selectedMedia ? (
-                  <View style={styles.mediaPreviewContainer}>
-                    <Image source={{ uri: selectedMedia.uri }} style={styles.mediaPreview} />
-                    <TouchableOpacity
-                      style={styles.changeMediaBtn}
-                      onPress={() => setSelectedMedia(null)}
-                    >
-                      <Ionicons name="trash-outline" size={18} color="#ffffff" />
-                      <Text style={{ color: "#ffffff", fontWeight: "700", marginLeft: 4 }}>Remove</Text>
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <View style={styles.pickButtonsRow}>
-                    <TouchableOpacity style={styles.pickCard} onPress={handlePickFromGallery}>
-                      <Ionicons name="images-outline" size={32} color={COLORS.primary} />
-                      <Text style={styles.pickCardText}>Gallery</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.pickCard} onPress={handleLaunchCamera}>
-                      <Ionicons name="camera-outline" size={32} color={COLORS.primary} />
-                      <Text style={styles.pickCardText}>Camera</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-
-                {/* OVERLAY TEXT INPUT */}
-                <Text style={styles.label}>Add Story Text Overlay</Text>
-                <TextInput
-                  style={styles.input}
-                  value={caption}
-                  onChangeText={setCaption}
-                  placeholder="Type a message or text overlay for your story..."
-                  placeholderTextColor={COLORS.placeholderText}
-                  multiline
-                />
+                <TouchableOpacity
+                  style={styles.shareBtn}
+                  onPress={handlePublishStory}
+                  disabled={publishing}
+                >
+                  {publishing ? (
+                    <ActivityIndicator color="#ffffff" size="small" />
+                  ) : (
+                    <Text style={styles.shareBtnText}>Share Story 🚀</Text>
+                  )}
+                </TouchableOpacity>
               </View>
-            ) : (
-              <View>
-                <Text style={styles.label}>Book Title</Text>
-                <TextInput
-                  style={styles.input}
-                  value={bookTitle}
-                  onChangeText={setBookTitle}
-                  placeholder="e.g. Atomic Habits"
-                  placeholderTextColor={COLORS.placeholderText}
-                />
+            </View>
+          ) : (
+            <View style={styles.pickerOptionsContainer}>
+              {/* TAKE PHOTO WITH CAMERA */}
+              <TouchableOpacity style={styles.optionCard} onPress={handleTakePhoto} activeOpacity={0.8}>
+                <View style={[styles.iconCircle, { backgroundColor: "#e0f2fe" }]}>
+                  <Ionicons name="camera" size={32} color="#0284c7" />
+                </View>
+                <View style={styles.optionTextContainer}>
+                  <Text style={styles.optionTitle}>Camera</Text>
+                  <Text style={styles.optionSubtitle}>Take a photo with your device camera</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
+              </TouchableOpacity>
 
-                <Text style={styles.label}>Highlighted Quote / Excerpt *</Text>
-                <TextInput
-                  style={[styles.input, styles.textArea]}
-                  value={quote}
-                  onChangeText={setQuote}
-                  multiline
-                  numberOfLines={4}
-                  placeholder="Paste or type the quote text..."
-                  placeholderTextColor={COLORS.placeholderText}
-                />
-
-                <Text style={styles.label}>Page Number (Optional)</Text>
-                <TextInput
-                  style={styles.input}
-                  value={pageNumber}
-                  onChangeText={setPageNumber}
-                  placeholder="e.g. 142"
-                  placeholderTextColor={COLORS.placeholderText}
-                />
-              </View>
-            )}
-            <View style={{ height: 40 }} />
-          </ScrollView>
+              {/* CHOOSE FROM GALLERY */}
+              <TouchableOpacity style={styles.optionCard} onPress={handlePickFromGallery} activeOpacity={0.8}>
+                <View style={[styles.iconCircle, { backgroundColor: "#f0fdf4" }]}>
+                  <Ionicons name="images" size={32} color="#16a34a" />
+                </View>
+                <View style={styles.optionTextContainer}>
+                  <Text style={styles.optionTitle}>Photo Gallery</Text>
+                  <Text style={styles.optionSubtitle}>Choose an existing image from your library</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "flex-end",
   },
-  container: {
-    backgroundColor: COLORS.background,
+  modalContent: {
+    backgroundColor: COLORS.cardBackground,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    maxHeight: "92%",
+    padding: 20,
+    minHeight: 320,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    marginBottom: 20,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
   },
   closeBtn: {
     padding: 4,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: COLORS.textDark,
+  pickerOptionsContainer: {
+    gap: 14,
+    paddingBottom: 20,
   },
-  publishBtn: {
-    backgroundColor: "#0095f6",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  publishBtnText: {
-    color: "#ffffff",
-    fontWeight: "700",
-    fontSize: 14,
-  },
-  tabContainer: {
-    flexDirection: "row",
-    paddingHorizontal: 18,
-    paddingTop: 12,
-    gap: 12,
-  },
-  tabBtn: {
-    flex: 1,
+  optionCard: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: COLORS.cardBackground,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: COLORS.inputBackground,
     borderWidth: 1,
     borderColor: COLORS.border,
-    gap: 6,
   },
-  activeTabBtn: {
-    borderColor: COLORS.primary,
-    backgroundColor: "#e8f5e9",
+  iconCircle: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
   },
-  tabText: {
+  optionTextContainer: {
+    flex: 1,
+  },
+  optionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+  },
+  optionSubtitle: {
     fontSize: 13,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  previewContainer: {
+    alignItems: "center",
+    paddingBottom: 10,
+  },
+  previewImage: {
+    width: "100%",
+    height: 260,
+    borderRadius: 16,
+    marginBottom: 14,
+  },
+  captionInput: {
+    width: "100%",
+    backgroundColor: COLORS.inputBackground,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: COLORS.textPrimary,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 16,
+  },
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    width: "100%",
+  },
+  changeMediaBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: COLORS.inputBackground,
+    alignItems: "center",
+  },
+  changeMediaText: {
+    fontSize: 14,
     fontWeight: "600",
     color: COLORS.textSecondary,
   },
-  activeTabText: {
-    color: COLORS.primary,
-    fontWeight: "700",
-  },
-  body: {
-    padding: 18,
-  },
-  pickButtonsRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginVertical: 10,
-  },
-  pickCard: {
+  shareBtn: {
     flex: 1,
-    height: 120,
-    borderRadius: 16,
-    backgroundColor: "#ffffff",
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-  },
-  pickCardText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: COLORS.textDark,
-  },
-  mediaPreviewContainer: {
-    height: 280,
-    borderRadius: 16,
-    overflow: "hidden",
-    marginBottom: 14,
-    position: "relative",
-  },
-  mediaPreview: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 16,
-  },
-  changeMediaBtn: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
-    marginBottom: 6,
-    marginTop: 10,
-  },
-  input: {
-    backgroundColor: "#ffffff",
+    paddingVertical: 14,
     borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: COLORS.textDark,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    marginBottom: 4,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
   },
-  textArea: {
-    minHeight: 80,
-    textAlignVertical: "top",
+  shareBtnText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#ffffff",
   },
 });

@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   booksList: {
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   bookItem: {
     flexDirection: "row",

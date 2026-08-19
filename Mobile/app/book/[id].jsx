@@ -22,7 +22,6 @@ import Loader from "../../components/Loader";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAlert } from "../../context/AlertContext";
-import CreateStoryModal from "../../components/CreateStoryModal";
 import ImageViewerModal from "../../components/ImageViewerModal";
 import EditBookModal from "../../components/EditBookModal";
 
@@ -298,7 +297,7 @@ export default function BookDetails() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={localStyles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={localStyles.scrollContent} showsVerticalScrollIndicator={true} scrollEventThrottle={16}>
         {/* COVER & MAIN INFO */}
         <View style={localStyles.coverSection}>
           <TouchableOpacity
@@ -328,16 +327,11 @@ export default function BookDetails() {
           </View>
         </View>
 
-        {/* ACTION BUTTONS: READ, LIKE & SHARE STORY */}
+        {/* ACTION BUTTONS: READ & LIKE */}
         <View style={localStyles.actionsRow}>
           <TouchableOpacity style={localStyles.readButton} onPress={handleOpenPdf}>
             <Ionicons name="document-text-outline" size={18} color={COLORS.white} />
-            <Text style={localStyles.readButtonText}>Read</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={localStyles.storyButton} onPress={() => setStoryModalVisible(true)}>
-            <Ionicons name="sparkles" size={18} color="#ffffff" />
-            <Text style={localStyles.storyButtonText}>Share Story</Text>
+            <Text style={localStyles.readButtonText}>Read PDF</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -350,7 +344,7 @@ export default function BookDetails() {
               color={isLiked ? "#e53935" : COLORS.textPrimary}
             />
             <Text style={[localStyles.likeButtonText, isLiked && { color: "#e53935" }]}>
-              {likesCount}
+              {likesCount} {likesCount === 1 ? "Like" : "Likes"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -519,15 +513,6 @@ export default function BookDetails() {
         </View>
       </Modal>
 
-      <CreateStoryModal
-        visible={storyModalVisible}
-        onClose={() => setStoryModalVisible(false)}
-        initialBookTitle={book?.title}
-        initialBookCover={book?.image}
-        initialBookId={book?._id}
-        initialPageNumber={String(lastPageRead)}
-      />
-
       <EditBookModal
         visible={editBookModalVisible}
         book={book}
@@ -642,9 +627,29 @@ const localStyles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     paddingVertical: 14,
     borderRadius: 14,
-    gap: 8,
+    gap: 6,
   },
   readButtonText: {
+    color: COLORS.white,
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  readTogetherFullBtn: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#166534",
+    paddingVertical: 14,
+    borderRadius: 14,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  readTogetherFullBtnText: {
     color: COLORS.white,
     fontWeight: "700",
     fontSize: 14,
@@ -898,5 +903,47 @@ const localStyles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: COLORS.textSecondary,
+  },
+  friendRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.inputBackground,
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  friendAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    marginRight: 12,
+  },
+  friendName: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+  },
+  friendBio: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+  },
+  creatorFriendRow: {
+    borderColor: "#16a34a",
+    backgroundColor: "#f0fdf4",
+  },
+  creatorBadge: {
+    backgroundColor: "#dcfce7",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#bbf7d0",
+  },
+  creatorBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#15803d",
   },
 });

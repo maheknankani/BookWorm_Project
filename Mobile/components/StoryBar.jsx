@@ -11,12 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import COLORS from "../constants/colors";
 
-const INSTAGRAM_GRADIENT = [
-  "#CA1D7E",
-  "#E35157",
-  "#F2703F",
-  "#F99C4B",
-];
+const INSTAGRAM_GRADIENT = ["#CA1D7E", "#E35157", "#F2703F", "#F99C4B"];
 
 export default function StoryBar({
   storyGroups = [],
@@ -24,8 +19,9 @@ export default function StoryBar({
   onOpenCreateStory,
   onSelectStoryGroup,
 }) {
-  const currentUserGroup = storyGroups.find((g) => g.isCurrentUser);
-  const otherGroups = storyGroups.filter((g) => !g.isCurrentUser);
+  const safeGroups = Array.isArray(storyGroups) ? storyGroups : [];
+  const currentUserGroup = safeGroups.find((g) => g && g.isCurrentUser);
+  const otherGroups = safeGroups.filter((g) => g && !g.isCurrentUser);
 
   return (
     <View style={styles.container}>
@@ -62,7 +58,7 @@ export default function StoryBar({
                     />
                   ) : (
                     <View style={styles.avatarPlaceholder}>
-                      <Ionicons name="person" size={26} color="#8e8e8e" />
+                      <Ionicons name="person" size={28} color="#8e8e8e" />
                     </View>
                   )}
                 </View>
@@ -76,7 +72,7 @@ export default function StoryBar({
                   />
                 ) : (
                   <View style={styles.avatarPlaceholder}>
-                    <Ionicons name="person" size={26} color="#8e8e8e" />
+                    <Ionicons name="person" size={28} color="#8e8e8e" />
                   </View>
                 )}
               </View>
@@ -167,9 +163,9 @@ export default function StoryBar({
 const styles = StyleSheet.create({
   container: {
     paddingVertical: 10,
-    backgroundColor: "#ffffff",
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#dbdbdb",
+    backgroundColor: COLORS.cardBackground,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
   scrollContent: {
     paddingHorizontal: 12,
@@ -177,28 +173,28 @@ const styles = StyleSheet.create({
   },
   avatarItem: {
     alignItems: "center",
-    marginHorizontal: 7,
-    width: 72,
+    marginHorizontal: 8,
+    width: 76,
   },
   avatarWrapper: {
     position: "relative",
-    width: 72,
-    height: 72,
+    width: 76,
+    height: 76,
     justifyContent: "center",
     alignItems: "center",
   },
   gradientRing: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     padding: 2.5,
     justifyContent: "center",
     alignItems: "center",
   },
   viewedRing: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     padding: 1.5,
     borderWidth: 1.5,
     borderColor: "#c7c7c7",
@@ -206,16 +202,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   defaultAvatarContainer: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     justifyContent: "center",
     alignItems: "center",
   },
   whiteGap: {
     width: "100%",
     height: "100%",
-    borderRadius: 36,
+    borderRadius: 38,
     backgroundColor: "#ffffff",
     padding: 2.5,
     justifyContent: "center",
@@ -224,12 +220,12 @@ const styles = StyleSheet.create({
   avatarImage: {
     width: "100%",
     height: "100%",
-    borderRadius: 34,
+    borderRadius: 36,
   },
   avatarPlaceholder: {
     width: "100%",
     height: "100%",
-    borderRadius: 34,
+    borderRadius: 36,
     backgroundColor: "#f0f2f5",
     justifyContent: "center",
     alignItems: "center",
@@ -244,9 +240,9 @@ const styles = StyleSheet.create({
     bottom: 2,
     right: 2,
     backgroundColor: "#0095f6",
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2.5,
@@ -258,11 +254,11 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   avatarLabel: {
-    marginTop: 5,
-    fontSize: 11.5,
-    fontWeight: "400",
-    color: "#262626",
+    marginTop: 6,
+    fontSize: 12,
+    fontWeight: "500",
+    color: COLORS.textPrimary,
     textAlign: "center",
-    width: 70,
+    width: 74,
   },
 });
