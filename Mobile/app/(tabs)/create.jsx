@@ -70,7 +70,7 @@ export default function Create() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images || "images",
         allowsEditing: true,
         aspect: [3, 4],
-        quality: 0.9,
+        quality: 0.7,
         base64: true,
       });
 
@@ -150,20 +150,31 @@ export default function Create() {
       const imageType = fileType ? `image/${fileType.toLowerCase()}` : "image/jpeg";
       const imageDataUrl = `data:${imageType};base64,${imageBase64}`;
 
-      const response = await fetch(`${API_URL}/books`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title,
-          caption,
-          rating: rating.toString(),
-          image: imageDataUrl,
-          pdf: pdfDataUrl || "",
-        }),
-      });
+      let attempts = 0;
+      let response;
+      while (attempts < 2) {
+        try {
+          attempts++;
+          response = await fetch(`${API_URL}/books`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              title,
+              caption,
+              rating: rating.toString(),
+              image: imageDataUrl,
+              pdf: pdfDataUrl || "",
+            }),
+          });
+          if (response.ok) break;
+        } catch (netErr) {
+          if (attempts >= 2) throw netErr;
+          await new Promise((r) => setTimeout(r, 1200));
+        }
+      }
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Something went wrong");
