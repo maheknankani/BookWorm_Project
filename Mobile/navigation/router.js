@@ -39,20 +39,27 @@ export function useRouter() {
       }
     },
     replace: (target, extraParams) => {
-      if (typeof target === "string") {
-        if (target === "/(tabs)") {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "MainTabs" }],
-          });
-        } else if (target === "/(auth)") {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "AuthStack" }],
-          });
-        } else {
-          navigation.replace(target, extraParams);
+      try {
+        if (typeof target === "string") {
+          if (target === "/(tabs)" || target.startsWith("/(tabs)")) {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "MainTabs" }],
+            });
+          } else if (target === "/(auth)" || target.startsWith("/(auth)")) {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "AuthStack" }],
+            });
+          } else if (target.startsWith("/book/")) {
+            const id = target.split("/book/")[1];
+            navigation.navigate("BookDetails", { id, ...extraParams });
+          } else {
+            navigation.navigate(target, extraParams);
+          }
         }
+      } catch (err) {
+        console.warn("Navigation replace error:", err);
       }
     },
     back: () => {
